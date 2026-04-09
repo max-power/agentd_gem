@@ -112,6 +112,28 @@ module Agentd
       client.tool("list_messages", **{ channel:, direction:, page:, per: }.compact)
     end
 
+    # --- Memory ---
+
+    def memory_store(key, value, namespace: nil)
+      client.tool("memory_store", **{ key:, value:, namespace: }.compact)
+    end
+
+    def memory_search(query, limit: 10, namespace: nil)
+      client.tool("memory_search", **{ query:, limit:, namespace: }.compact)
+    end
+
+    def memory_list(namespace: nil, page: 1, per: 50)
+      client.tool("memory_list", **{ namespace:, page:, per: }.compact)
+    end
+
+    def memory_delete(key, namespace: nil)
+      client.tool("memory_delete", **{ key:, namespace: }.compact)
+    end
+
+    def dream
+      client.tool("dream")
+    end
+
     # --- Payments ---
 
     def fetch(url, method: "GET", max_amount_usdc: nil, **opts)

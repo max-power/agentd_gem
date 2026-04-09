@@ -246,6 +246,82 @@ module Agentd
 
   # ---------------------------------------------------------------------------
 
+  class MemoryCommands < Thor
+    include CLIHelpers
+    namespace :memory
+
+    class_option :endpoint,  type: :string, default: ENV.fetch("AGENTD_ENDPOINT", nil)
+    class_option :api_key,   type: :string, default: ENV["AGENTD_API_KEY"]
+    class_option :namespace, type: :string, desc: "Memory namespace (optional)"
+
+    desc "list", "List stored memories"
+    option :per, type: :numeric, default: 50
+    def list
+      memories = build_agent(options).memory_list(
+        namespace: options[:namespace],
+        per: options[:per]
+      )
+      if memories.empty?
+        say "No memories stored.", :yellow
+      else
+        memories.each { |m| print_memory(m) }
+        say "\n#{memories.length} #{"memory".then { |w| memories.length == 1 ? w : "memories" }}.", :white
+      end
+    end
+
+    desc "search QUERY", "Semantic search across memories"
+    option :limit, type: :numeric, default: 10
+    def search(query)
+      results = build_agent(options).memory_search(
+        query,
+        limit:     options[:limit],
+        namespace: options[:namespace]
+      )
+      if results.empty?
+        say "No results for: #{query}", :yellow
+      else
+        results.each { |m| print_memory(m) }
+      end
+    end
+
+    desc "store KEY VALUE", "Store a key/value memory"
+    def store(key, value)
+      parsed = (JSON.parse(value) rescue value)
+      build_agent(options).memory_store(key, parsed, namespace: options[:namespace])
+      say "Stored: #{key}", :green
+    end
+
+    desc "delete KEY", "Delete a memory by key"
+    def delete(key)
+      build_agent(options).memory_delete(key, namespace: options[:namespace])
+      say "Deleted: #{key}", :yellow
+    end
+
+    desc "dream", "Consolidate similar memories with LLM summarisation"
+    def dream
+      say "Dreaming… (this may take a moment)", :cyan
+      result = build_agent(options).dream
+      say format_json(result)
+    end
+
+    private
+
+    def print_memory(m)
+      say m["key"].to_s, :cyan
+      val = m["value"].is_a?(String) ? m["value"] : m["value"].to_json
+      say "  #{m["namespace"] ? "[#{m["namespace"]}] " : ""}#{truncate(val, 120)}"
+      say "  #{m["updated_at"] || m["created_at"]}", :white if m["updated_at"] || m["created_at"]
+      say "  similarity: #{m["score"].round(3)}", :yellow if m["score"]
+      puts
+    end
+
+    def truncate(str, len)
+      str.length > len ? "#{str[0, len]}…" : str
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+
   class CLI < Thor
     def self.exit_on_failure? = true
 
@@ -298,5 +374,8 @@ module Agentd
 
     desc "context SUBCOMMAND", "Read and write agent context"
     subcommand "context", ContextCommands
+
+    desc "memory SUBCOMMAND", "Inspect and manage agent memory"
+    subcommand "memory", MemoryCommands
   end
 end
