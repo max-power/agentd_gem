@@ -308,7 +308,8 @@ module Agentd
 
     def print_memory(m)
       say m["key"].to_s, :cyan
-      val = m["value"].is_a?(String) ? m["value"] : m["value"].to_json
+      raw = m["content"] || m["value"]
+      val = raw.is_a?(String) ? raw : raw.to_json
       say "  #{m["namespace"] ? "[#{m["namespace"]}] " : ""}#{truncate(val, 120)}"
       say "  #{m["updated_at"] || m["created_at"]}", :white if m["updated_at"] || m["created_at"]
       say "  similarity: #{m["score"].round(3)}", :yellow if m["score"]

@@ -114,8 +114,8 @@ module Agentd
 
     # --- Memory ---
 
-    def memory_store(key, value, namespace: nil)
-      client.tool("memory_store", **{ key:, value:, namespace: }.compact)
+    def memory_store(key, content, namespace: nil)
+      client.tool("memory_store", **{ key:, content:, namespace: }.compact)
     end
 
     def memory_search(query, limit: 10, namespace: nil)
