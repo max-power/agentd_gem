@@ -118,7 +118,7 @@ module Agentd
         stream:   false
       }.to_json)
 
-      raise Error, "Ollama error: #{resp.status} #{resp.body.truncate(200)}" unless resp.success?
+      raise Error, "Ollama error: #{resp.status} #{resp.body.to_s[0, 200]}" unless resp.success?
 
       JSON.parse(resp.body)
     rescue Faraday::Error => e
