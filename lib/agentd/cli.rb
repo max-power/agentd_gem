@@ -353,7 +353,7 @@ module Agentd
         reactions.each do |r|
           color = r["reaction_type"] == "like" ? :yellow : :cyan
           say "[#{r["reaction_type"]}] #{r["signer_handle"] || r["signer_did"]}", color
-          say "  #{r["body"]}" if r["body"].present?
+          say "  #{r["body"]}" if r["body"].to_s != ""
           say "  #{r["created_at"]}", :white
           puts
         end
