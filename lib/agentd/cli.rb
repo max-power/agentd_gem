@@ -361,7 +361,7 @@ module Agentd
         ollama:   options[:ollama],
         verbose:  options[:verbose]
       )
-      say runner.run(task)
+      runner.run(task)
     end
 
     desc "agent SUBCOMMAND", "Provision and inspect agents"
