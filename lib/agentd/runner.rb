@@ -118,65 +118,47 @@ module Agentd
     # Tool calls are collected from the final done=true chunk.
     # Returns a message hash compatible with the non-streaming format.
     def chat_stream(messages, tools)
-      buffer       = +""
+      require "net/http"
+      require "uri"
+
+      uri          = URI("#{@ollama_url}/api/chat")
       full_content = +""
       tool_calls   = nil
-      final_role   = "assistant"
-      streaming    = false
+      line_buf     = +""
 
-      conn = Faraday.new(url: @ollama_url) do |f|
-        f.options.timeout      = 300
-        f.options.open_timeout = 10
-      end
+      Net::HTTP.start(uri.host, uri.port, read_timeout: 300, open_timeout: 10) do |http|
+        req          = Net::HTTP::Post.new(uri)
+        req["Content-Type"] = "application/json"
+        req.body     = { model: @model, messages:, tools:, stream: true }.to_json
 
-      conn.post("/api/chat") do |req|
-        req.headers["Content-Type"] = "application/json"
-        req.body = {
-          model:    @model,
-          messages:,
-          tools:,
-          stream:   true
-        }.to_json
+        http.request(req) do |resp|
+          raise Error, "Ollama error: #{resp.code}" unless resp.is_a?(Net::HTTPSuccess)
 
-        req.options.on_data = proc do |chunk, _bytes, env|
-          raise Error, "Ollama error: #{env&.status}" if env&.status && env.status >= 400
+          resp.read_body do |chunk|
+            line_buf << chunk
+            while (line_buf.include?("\n"))
+              line, line_buf = line_buf.split("\n", 2)
+              line_buf ||= +""
+              line.strip!
+              next if line.empty?
 
-          buffer << chunk
+              data  = JSON.parse(line) rescue next
+              token = data.dig("message", "content").to_s
 
-          while (line = buffer.slice!(/\A[^\n]*\n/))
-            line.strip!
-            next if line.empty?
-
-            data = JSON.parse(line) rescue next
-
-            token = data.dig("message", "content").to_s
-            final_role = data.dig("message", "role") || final_role
-
-            if token.length > 0
-              unless streaming
-                # First token — newline after any tool status lines
-                streaming = true
+              if token.length > 0
+                $stdout.print token
+                $stdout.flush
+                full_content << token
               end
-              $stdout.print token
-              $stdout.flush
-              full_content << token
-            end
 
-            if data["done"]
-              tool_calls = data.dig("message", "tool_calls")
+              tool_calls = data.dig("message", "tool_calls") if data["done"]
             end
           end
         end
       end
 
-      {
-        "message" => {
-          "role"       => final_role,
-          "content"    => full_content,
-          "tool_calls" => tool_calls
-        }
-      }
-    rescue Faraday::Error => e
+      { "message" => { "role" => "assistant", "content" => full_content, "tool_calls" => tool_calls } }
+    rescue => e
       raise Error, "Ollama connection error: #{e.message}"
     end
 
