@@ -148,5 +148,15 @@ module Agentd
     def payments(status: nil, page: 1, per: 20)
       client.tool("list_payments", **{ status:, page:, per: }.compact)
     end
+
+    # --- Reactions ---
+
+    def react(url, type: "comment", body: nil)
+      client.tool("react_to_publication", **{ url:, reaction_type: type, body: }.compact)
+    end
+
+    def reactions(slug, type: nil)
+      client.tool("list_reactions", **{ slug:, type: }.compact)
+    end
   end
 end

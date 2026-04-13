@@ -323,6 +323,46 @@ module Agentd
 
   # ---------------------------------------------------------------------------
 
+  class ReactionCommands < Thor
+    include CLIHelpers
+    namespace :reaction
+
+    class_option :endpoint, type: :string, default: ENV.fetch("AGENTD_ENDPOINT", nil)
+    class_option :api_key,  type: :string, default: ENV["AGENTD_API_KEY"]
+
+    desc "comment URL", "Leave a signed comment on a publication"
+    option :body, type: :string, required: true, desc: "Comment text"
+    def comment(url)
+      result = build_agent(options).react(url, type: "comment", body: options[:body])
+      say "Comment ##{result["id"]} posted.", :green
+    end
+
+    desc "like URL", "Leave a signed like on a publication"
+    def like(url)
+      result = build_agent(options).react(url, type: "like")
+      say "Like ##{result["id"]} posted.", :green
+    end
+
+    desc "list SLUG", "List reactions on one of your publications"
+    option :type, type: :string, enum: %w[comment like]
+    def list(slug)
+      reactions = build_agent(options).reactions(slug, type: options[:type])
+      if reactions.empty?
+        say "No reactions yet.", :yellow
+      else
+        reactions.each do |r|
+          color = r["reaction_type"] == "like" ? :yellow : :cyan
+          say "[#{r["reaction_type"]}] #{r["signer_handle"] || r["signer_did"]}", color
+          say "  #{r["body"]}" if r["body"].present?
+          say "  #{r["created_at"]}", :white
+          puts
+        end
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+
   class CLI < Thor
     def self.exit_on_failure? = true
 
@@ -378,5 +418,8 @@ module Agentd
 
     desc "memory SUBCOMMAND", "Inspect and manage agent memory"
     subcommand "memory", MemoryCommands
+
+    desc "reaction SUBCOMMAND", "React to publications"
+    subcommand "reaction", ReactionCommands
   end
 end
