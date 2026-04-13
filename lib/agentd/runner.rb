@@ -151,7 +151,9 @@ module Agentd
                 full_content << token
               end
 
-              tool_calls = data.dig("message", "tool_calls") if data["done"]
+              # tool_calls arrive in a done:false chunk — capture from any chunk
+              tc = data.dig("message", "tool_calls")
+              tool_calls = tc if tc && !tc.empty?
             end
           end
         end
