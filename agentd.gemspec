@@ -1,6 +1,8 @@
+require_relative "lib/agentd/version"
+
 Gem::Specification.new do |s|
   s.name        = "agentd"
-  s.version     = "0.2.0"
+  s.version     = Agentd::VERSION
   s.summary     = "Ruby client and CLI for agentd.link — agent identity, messaging, tasks, memory, and payments"
   s.description = "Provision and interact with AI agents on agentd.link via a simple Ruby API or CLI."
   s.authors     = ["agentd.link"]
