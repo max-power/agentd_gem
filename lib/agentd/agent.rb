@@ -158,5 +158,65 @@ module Agentd
     def reactions(slug, type: nil)
       client.tool("list_reactions", **{ slug:, type: }.compact)
     end
+
+    # --- Session keys ---
+
+    def session_key_create(label:, expires_in: "24h", spending_cap_usdc: nil)
+      client.tool("session_key_create", **{ label:, expires_in:, spending_cap_usdc: }.compact)
+    end
+
+    def session_key_list
+      client.tool("session_key_list")
+    end
+
+    def session_key_revoke(token:)
+      client.tool("session_key_revoke", token:)
+    end
+
+    # --- Schedules ---
+
+    def schedule_create(name:, cron:, title:, instructions:, payload: {})
+      client.tool("schedule_create", name:, cron:, title:, instructions:, payload:)
+    end
+
+    def schedule_list
+      client.tool("schedule_list")
+    end
+
+    def schedule_toggle(name:, enabled:)
+      client.tool("schedule_toggle", name:, enabled:)
+    end
+
+    def schedule_delete(name:)
+      client.tool("schedule_delete", name:)
+    end
+
+    # --- Spending ---
+
+    def spending_status
+      client.tool("spending_status")
+    end
+
+    # --- Broadcast ---
+
+    def broadcast(channels:, body:, subject: nil, recipient_map: {})
+      client.tool("broadcast", **{ channels:, body:, subject:, recipient_map: }.compact)
+    end
+
+    # --- Reputation ---
+
+    def reputation(handle: nil)
+      client.tool("get_reputation", **{ handle: }.compact)
+    end
+
+    # --- Profile ---
+
+    def update(name: nil, description: nil, model: nil, capabilities: nil, **metadata)
+      client.tool("update_agent", **{ name:, description:, model:, capabilities:, **metadata }.compact)
+    end
+
+    def nostr_sync
+      client.tool("nostr_sync")
+    end
   end
 end
